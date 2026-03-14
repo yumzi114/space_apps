@@ -2,33 +2,66 @@ mod module_bindings;
 use module_bindings::*;
 use eframe::egui::{self, ScrollArea};
 
+use serde::{Deserialize, Serialize};
 use spacetimedb_sdk::{credentials, DbContext, Error, Event, Identity, Status, Table, TableWithPrimaryKey};
 
-use crate::{app_threads::tt_thread, chat_fn::{connect_to_db, register_callbacks, subscribe_to_tables}};
+use crate::{app_threads::tt_thread, chat_fn::{connect_to_db, register_callbacks, subscribe_to_tables}, pages::live_view, settings_app::{format_timestamp_hms, setup_custom_fonts}};
 
 
 mod chat_fn;
 mod app_threads;
+mod pages;
+mod settings_app;
+#[derive(Default, Debug, Serialize, Deserialize)]
+struct AppConfig {
+    feild_font_size: f32,
+    value_font_size: f32,
+}
+enum App_Mode {
+    LIVE,
+    USERS,
+    DATA
+}
+fn load_or_create_config() -> AppConfig {
+    match confy::load("app-config", None) {
+        Ok(cfg) => cfg,
+        Err(err) => {
+            eprintln!("config load failed: {err}");
+
+            let cfg = AppConfig::default();
+
+            if let Err(store_err) = confy::store("app-config", None, &cfg) {
+                eprintln!("config store failed: {store_err}");
+            }
+
+            cfg
+        }
+    }
+}
 // #[derive(Default)]
+// #[derive(Serialize, Deserialize)]
 struct MyEguiApp {
     chat_ctx: DbConnection,
-    rt: tokio::runtime::Runtime
+    rt: tokio::runtime::Runtime,
+    app_config:AppConfig,
+    app_mode:App_Mode
 }
 
 impl MyEguiApp {
     fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        // Customize egui here with cc.egui_ctx.set_fonts and cc.egui_ctx.set_visuals.
-        // Restore app state using cc.storage (requires the "persistence" feature).
-        // Use the cc.gl (a glow::Context) to create graphics shaders and buffers that you can use
-        // for e.g. egui::PaintCallback.
+        setup_custom_fonts(&cc.egui_ctx);
         let chat_ctx: DbConnection = connect_to_db();
         let rt: tokio::runtime::Runtime = tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
                 .build()
                 .unwrap();
+        let app_config = load_or_create_config();
+
         Self{
             rt,
-            chat_ctx
+            chat_ctx,
+            app_config,
+            app_mode:App_Mode::LIVE,
         }
     }
 }
@@ -37,103 +70,55 @@ impl eframe::App for MyEguiApp {
    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         ctx.request_repaint();
        egui::CentralPanel::default().show(ctx, |ui| {
-           
            egui::MenuBar::new().ui(ui, |ui| {
                 // NOTE: no File->Quit on web pages!
-                ui.menu_button("File", |ui| {
-                    if ui.button("Quit").clicked() {
+                ui.menu_button(" 시스템 ", |ui| {
+                    ui.menu_button("메뉴선택", |ui| {
+                        if ui.button(" 실시간 ").clicked() {
+                            self.app_mode=App_Mode::LIVE;
+                        }
+                        if ui.button(" 사용자 ").clicked() {
+                            self.app_mode=App_Mode::USERS;
+                        }
+                        if ui.button(" 데이터 ").clicked() {
+                            self.app_mode=App_Mode::DATA;
+                        }
+                    });
+                    if ui.button(" 종 료 ").clicked() {
                         ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                     }
                 });
                 ui.add_space(16.0);
-                ui.menu_button("Weget", |ui| {
-                    if ui.button("Quit").clicked() {
-                        // ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-                    }
-                });
-                ui.add_space(16.0);
-                ui.menu_button("Sys color", |ui| {
-                    egui::widgets::global_theme_preference_buttons(ui);
-                });
-            });
-           ui.heading("SpacetimeDB TEST ");
-            let user = self.chat_ctx.db.user();
-            ui.label(format!("{:?}",user.count()));
-           let mut messages = self.chat_ctx.db.message().iter().collect::<Vec<_>>();
-            messages.sort_by_key(|m| m.sent);
-            // let asd = ui.re
-            ui.vertical(|ui| {
-            // 헤더 고정
-            let fill = if ui.ctx().style().visuals.dark_mode {
-                egui::Color32::from_rgb(117, 88, 88)
-            } else {
-                egui::Color32::from_rgb(113, 117, 114)
-            };
-            egui::Frame::NONE
-                .fill(fill)
-                .inner_margin(egui::Margin::same(6))
-                .show(ui, |ui| {
-                    ui.set_height(20.);
-
-                    ui.horizontal(|ui| {
-                        ui.add_sized([50.0, 20.0], egui::Label::new(egui::RichText::new("No").strong()));
-                        ui.add_sized([80.0, 20.0], egui::Label::new(egui::RichText::new("MSG").strong()));
-                        ui.add_sized([ui.available_width(), 20.0], egui::Label::new(egui::RichText::new("Time").strong()));
+                ui.menu_button(" 보기설정 ", |ui| {
+                    ui.menu_button("배경색상", |ui| {
+                        egui::widgets::global_theme_preference_buttons(ui);
+                    });
+                    ui.menu_button("글자크기", |ui| {
+                        let f_resp=ui.add(egui::Slider::new(&mut self.app_config.feild_font_size, 8.0..=40.0).text("제목"));
+                        if f_resp.changed() {
+                            let _ = confy::store("app-config", None, &self.app_config);
+                        }
+                        let v_resp=ui.add(egui::Slider::new(&mut self.app_config.value_font_size, 8.0..=40.0).text("값"));
+                        if v_resp.changed() {
+                            let _ = confy::store("app-config", None, &self.app_config);
+                        }
+                        // egui::widgets::global_theme_preference_buttons(ui);
                     });
                 });
-
-            ui.separator();
-
-            // 바디만 스크롤
-            egui::ScrollArea::vertical()
-                // .max_height(20.)
-                .stick_to_bottom(true)
-                .auto_shrink([false, false])
-                .show(ui, |ui| {
-                    for (idx,message) in messages.iter().enumerate() {
-                        egui::Frame::NONE
-                            .inner_margin(egui::Margin::symmetric(6, 4))
-                            .show(ui, |ui| {
-                                ui.horizontal(|ui| {
-                                    ui.add_sized([50.0, 18.0], egui::Label::new(idx.to_string()));
-                                    ui.add_sized([80.0, 18.0], egui::Label::new(message.text.to_string()));
-                                    ui.add_sized([ui.available_width() - 8.0, 18.0], egui::Label::new(format!("{}",message.sent)));
-                                });
-                            });
-
-                        ui.separator();
-                    }
-                });
+                ui.add_space(16.0);
             });
-            // egui::ScrollArea::vertical()
-            // // .max_height(ui.available_height() * 0.5)
-            // .show(ui, |ui| {
-            //     egui::Frame::NONE
-            //         .inner_margin(egui::Margin::symmetric(0, 0))
-            //         .show(ui, |ui| {
-            //             ui.set_width(ui.available_width() - 20.0);
+            match self.app_mode {
+                App_Mode::LIVE=>{
+                    live_view(self, ctx, ui);
+                },
+                App_Mode::USERS=>{
 
-            //             for (idx,message) in messages.iter().enumerate() {
-                            
-            //                 ui.label(format!("{} : {} : {}", idx,message.text,message.sent));
-            //                 // ui.label(row.created_at.to_string());
-            //             }
-            //         });
-            // });
-            // egui::ScrollArea::vertical().show(ui, |ui| {
-            //    for message in messages {
-            //         ui.set_width(ui.available_width() - 16.0);
-            //         ui.label(format!("{}:{}", message.text,message.sent));
-            //     }
-            // });
-            
-           
-       });
-       egui::TopBottomPanel::bottom("bottom").show(ctx, |ui|{
-            if ui.button("atoms").clicked(){
-                self.chat_ctx.reducers.send_message("text".to_string()).unwrap();
+                }
+                App_Mode::DATA=>{
+
+                }
             }
-        });
+       });
    }
 }
 
@@ -158,7 +143,7 @@ async fn main() {
                 register_callbacks(&app.chat_ctx);
                 subscribe_to_tables(&app.chat_ctx);
                 app.chat_ctx.run_threaded();
-                tt_thread(&app.rt.handle());
+                // tt_thread(&app.rt.handle());
                 Ok(Box::new(app))
             }
         ));

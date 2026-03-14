@@ -6,6 +6,7 @@
 #![allow(unused, clippy::all)]
 use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
+pub mod cleanup_schedule_type;
 pub mod message_table;
 pub mod message_type;
 pub mod send_message_reducer;
@@ -13,6 +14,7 @@ pub mod set_name_reducer;
 pub mod user_table;
 pub mod user_type;
 
+pub use cleanup_schedule_type::CleanupSchedule;
 pub use message_table::*;
 pub use message_type::Message;
 pub use send_message_reducer::send_message;
@@ -104,7 +106,9 @@ impl __sdk::DbUpdate for DbUpdate {
     ) -> AppliedDiff<'_> {
         let mut diff = AppliedDiff::default();
 
-        diff.message = cache.apply_diff_to_table::<Message>("message", &self.message);
+        diff.message = cache
+            .apply_diff_to_table::<Message>("message", &self.message)
+            .with_updates_by_pk(|row| &row.id);
         diff.user = cache
             .apply_diff_to_table::<User>("user", &self.user)
             .with_updates_by_pk(|row| &row.identity);

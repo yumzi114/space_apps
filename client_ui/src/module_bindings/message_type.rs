@@ -7,6 +7,7 @@ use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 #[derive(__lib::ser::Serialize, __lib::de::Deserialize, Clone, PartialEq, Debug)]
 #[sats(crate = __lib)]
 pub struct Message {
+    pub id: u64,
     pub sender: __sdk::Identity,
     pub sent: __sdk::Timestamp,
     pub text: String,
@@ -20,6 +21,7 @@ impl __sdk::InModule for Message {
 ///
 /// Provides typed access to columns for query building.
 pub struct MessageCols {
+    pub id: __sdk::__query_builder::Col<Message, u64>,
     pub sender: __sdk::__query_builder::Col<Message, __sdk::Identity>,
     pub sent: __sdk::__query_builder::Col<Message, __sdk::Timestamp>,
     pub text: __sdk::__query_builder::Col<Message, String>,
@@ -29,6 +31,7 @@ impl __sdk::__query_builder::HasCols for Message {
     type Cols = MessageCols;
     fn cols(table_name: &'static str) -> Self::Cols {
         MessageCols {
+            id: __sdk::__query_builder::Col::new(table_name, "id"),
             sender: __sdk::__query_builder::Col::new(table_name, "sender"),
             sent: __sdk::__query_builder::Col::new(table_name, "sent"),
             text: __sdk::__query_builder::Col::new(table_name, "text"),
@@ -39,12 +42,16 @@ impl __sdk::__query_builder::HasCols for Message {
 /// Indexed column accessor struct for the table `Message`.
 ///
 /// Provides typed access to indexed columns for query building.
-pub struct MessageIxCols {}
+pub struct MessageIxCols {
+    pub id: __sdk::__query_builder::IxCol<Message, u64>,
+}
 
 impl __sdk::__query_builder::HasIxCols for Message {
     type IxCols = MessageIxCols;
     fn ix_cols(table_name: &'static str) -> Self::IxCols {
-        MessageIxCols {}
+        MessageIxCols {
+            id: __sdk::__query_builder::IxCol::new(table_name, "id"),
+        }
     }
 }
 

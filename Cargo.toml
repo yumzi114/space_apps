@@ -1,0 +1,7 @@
+[workspace]
+members = ["api_server","client_ui","db-schema/spacetimedb",
+    # "spacetimedb",
+]
+
+default-members = ["client_ui"]
+resolver = "2"

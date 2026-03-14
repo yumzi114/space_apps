@@ -10,10 +10,10 @@ pub fn live_view(
     ctx:&Context,
     ui:&mut egui::Ui, 
 ){
-    ui.heading("SpacetimeDB TEST ");
+    
     ui.heading("LIVE VIEW ");
     let user = app.chat_ctx.db.user();
-    ui.label(format!("{:?}",user.count()));
+    ui.label(format!("연결된 사용자 : {:?}",user.count()));
     let mut messages = app.chat_ctx.db.message().iter().collect::<Vec<_>>();
     messages.sort_by_key(|m| m.sent);
     // let asd = ui.re
@@ -32,7 +32,7 @@ pub fn live_view(
 
             ui.horizontal(|ui| {
                 ui.add_sized([50.0, 20.0], egui::Label::new(egui::RichText::new("순번").strong()));
-                ui.add_sized([100.0, 20.0], egui::Label::new(egui::RichText::new("시간").strong()));
+                ui.add_sized([100.0, 20.0], egui::Label::new(egui::RichText::new("시간(H:M:S.MS)").strong()));
                 ui.add_sized([ui.available_width(), 20.0], egui::Label::new(egui::RichText::new("메세지").strong()));
             });
         });

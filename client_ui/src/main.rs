@@ -80,7 +80,7 @@ impl eframe::App for MyEguiApp {
                         if ui.button(" 사용자 ").clicked() {
                             self.app_mode=App_Mode::USERS;
                         }
-                        if ui.button(" 데이터 ").clicked() {
+                        if ui.button(" DATA LOG ").clicked() {
                             self.app_mode=App_Mode::DATA;
                         }
                     });
@@ -106,6 +106,20 @@ impl eframe::App for MyEguiApp {
                     });
                 });
                 ui.add_space(16.0);
+            });
+            ui.horizontal(|ui|{
+                ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
+                    ui.heading("SpacetimeDB TEST ");
+                });
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::RIGHT), |ui| {
+                    ui.add_space(30.);
+                    
+                    // ui.heading(chrono::Local::now().format("%H:%M:%S").to_string());
+                    ui.add_sized([120.0, 30.0], egui::Label::new(egui::RichText::new(chrono::Local::now().format("%H:%M:%S").to_string()).strong().size(25.)));
+                    ui.add_sized([80.0, 30.0], egui::Label::new(egui::RichText::new("TIME : ").strong().size(25.)));
+                    
+                });
+                
             });
             match self.app_mode {
                 App_Mode::LIVE=>{

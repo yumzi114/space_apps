@@ -1,20 +1,33 @@
 # space_apps
+## This repositorie used [spacetimeDB](https://github.com/clockworklabs/SpacetimeDB)
 
 
+Please refer to the example code in the official [documentation](https://spacetimedb.com/docs/tutorials/chat-app).
+## Template Structure 
+| Template  | Discliption |
+| ------------- |:-------------:|
+| db-schema      | SpacetimeDB schema     |
+| api_server      | Axum api server     |
+| client_ui      | egui client     |
+| eframe_template      | WASM Template     |
+
+
+## SpacetimeDB Commands
+
+```bash
+# Reset Database
 spacetime delete --server proxmox-stdb eomdb
 spacetime publish --server proxmox-stdb --module-path spacetimedb eomdb
 
-
-쿼리문 
+# Run SQL Query
 spacetime sql --server proxmox-stdb eomdb "SELECT * FROM user"
 
-디비반영
+# Apply Database Changes
 spacetime publish --server proxmox-stdb --module-path spacetimedb eomdb
 
-
-바인딩생성
+# Generate Rust Bindings
 spacetime generate --lang rust --out-dir src/module_bindings --module-path ../db-schema/spacetimedb
 
-
-디비 모니터링
+# Monitor Database Logs
 spacetime logs --server proxmox-stdb --follow eomdb
+```

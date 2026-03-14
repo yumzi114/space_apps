@@ -1,4 +1,0 @@
-[env]
-DB_HOST = "http://192.168.0.101:3000"
-DB_NAME="eomdb"
-CHAT_KEY="eom-chat"

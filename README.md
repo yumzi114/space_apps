@@ -1,5 +1,5 @@
 # space_apps
-## This repositorie used [spacetimeDB](https://github.com/clockworklabs/SpacetimeDB)
+## This repository used [spacetimeDB](https://github.com/clockworklabs/SpacetimeDB)
 
 
 Please refer to the example code in the official [documentation](https://spacetimedb.com/docs/tutorials/chat-app).

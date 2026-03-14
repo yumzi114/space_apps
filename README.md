@@ -17,6 +17,7 @@ Please refer to the example code in the official [documentation](https://spaceti
 ```bash
 # Reset Database
 spacetime delete --server proxmox-stdb eomdb
+spacetime publish --server proxmox-stdb eomdb --delete-data
 spacetime publish --server proxmox-stdb --module-path spacetimedb eomdb
 
 # Run SQL Query
@@ -26,7 +27,8 @@ spacetime sql --server proxmox-stdb eomdb "SELECT * FROM user"
 spacetime publish --server proxmox-stdb --module-path spacetimedb eomdb
 
 # Generate Rust Bindings
-spacetime generate --lang rust --out-dir src/module_bindings --module-path ../db-schema/spacetimedb
+spacetime generate --lang rust --out-dir ../client_ui/src/module_bindings 
+--module-path /spacetimedb
 
 # Monitor Database Logs
 spacetime logs --server proxmox-stdb --follow eomdb

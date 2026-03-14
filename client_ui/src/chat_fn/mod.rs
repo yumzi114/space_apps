@@ -40,17 +40,14 @@ pub fn creds_store() -> credentials::File {
 /// Our `on_connect_error` callback: print the error, then exit the process.
 pub fn on_connect_error(_ctx: &ErrorContext, err: Error) {
     eprintln!("Connection error: {:?}", err);
-    std::process::exit(1);
 }
 
 /// Our `on_disconnect` callback: print a note, then exit the process.
 pub fn on_disconnected(_ctx: &ErrorContext, err: Option<Error>) {
     if let Some(err) = err {
         eprintln!("Disconnected: {}", err);
-        std::process::exit(1);
     } else {
         println!("Disconnected.");
-        std::process::exit(0);
     }
 }
 
@@ -148,36 +145,4 @@ pub fn on_sub_applied(ctx: &SubscriptionEventContext) {
 /// print the error, then exit the process.
 pub fn on_sub_error(_ctx: &ErrorContext, err: Error) {
     eprintln!("Subscription failed: {}", err);
-    std::process::exit(1);
-}
-
-/// Read each line of standard input, and either set our name or send a message as appropriate.
-pub fn user_input_loop(ctx: &DbConnection) {
-    for line in std::io::stdin().lines() {
-        let Ok(line) = line else {
-            panic!("Failed to read from stdin.");
-        };
-        if let Some(name) = line.strip_prefix("/name ") {
-            ctx.reducers
-                .set_name_then(name.to_string(), {
-                    let name = name.to_string();
-                    move |_ctx, result| match result {
-                        Err(e) => panic!("Internal error when setting name: {e}"),
-                        Ok(Err(e)) => eprintln!("Failed to set name to {name}: {e}"),
-                        Ok(Ok(())) => (),
-                    }
-                })
-                .unwrap();
-        } else {
-            ctx.reducers
-                .send_message_then(line.clone(), {
-                    move |_ctx, result| match result {
-                        Err(e) => panic!("Internal error when sending message: {e}"),
-                        Ok(Err(e)) => eprintln!("Failed to send message {line:?}: {e}"),
-                        Ok(Ok(())) => (),
-                    }
-                })
-                .unwrap();
-        }
-    }
 }

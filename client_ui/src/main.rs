@@ -4,14 +4,15 @@ use eframe::egui::{self, ScrollArea};
 
 use spacetimedb_sdk::{credentials, DbContext, Error, Event, Identity, Status, Table, TableWithPrimaryKey};
 
-use crate::chat_fn::{connect_to_db, register_callbacks, subscribe_to_tables, user_input_loop};
+use crate::{app_threads::tt_thread, chat_fn::{connect_to_db, register_callbacks, subscribe_to_tables}};
 
 
 mod chat_fn;
-
+mod app_threads;
 // #[derive(Default)]
 struct MyEguiApp {
-    chat_ctx: DbConnection
+    chat_ctx: DbConnection,
+    rt: tokio::runtime::Runtime
 }
 
 impl MyEguiApp {
@@ -21,7 +22,12 @@ impl MyEguiApp {
         // Use the cc.gl (a glow::Context) to create graphics shaders and buffers that you can use
         // for e.g. egui::PaintCallback.
         let chat_ctx: DbConnection = connect_to_db();
+        let rt: tokio::runtime::Runtime = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()
+                .unwrap();
         Self{
+            rt,
             chat_ctx
         }
     }
@@ -58,8 +64,13 @@ impl eframe::App for MyEguiApp {
             // let asd = ui.re
             ui.vertical(|ui| {
             // 헤더 고정
+            let fill = if ui.ctx().style().visuals.dark_mode {
+                egui::Color32::from_rgb(117, 88, 88)
+            } else {
+                egui::Color32::from_rgb(113, 117, 114)
+            };
             egui::Frame::NONE
-                .fill(egui::Color32::from_rgb(30, 30, 30))
+                .fill(fill)
                 .inner_margin(egui::Margin::same(6))
                 .show(ui, |ui| {
                     ui.set_height(20.);
@@ -128,22 +139,29 @@ impl eframe::App for MyEguiApp {
 
 
 
-fn main() {
+#[tokio::main]
+async fn main() {
     // let ctx: DbConnection = connect_to_db();
     // ctx.run_threaded();
     let native_options = eframe::NativeOptions::default();
+    let rt: tokio::runtime::Runtime = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()
+                .unwrap();
     eframe::run_native(
         "My egui App", 
         native_options, 
         Box::new(
             |cc| {
+                
                 let app = MyEguiApp::new(cc);
                 register_callbacks(&app.chat_ctx);
                 subscribe_to_tables(&app.chat_ctx);
                 app.chat_ctx.run_threaded();
+                tt_thread(&app.rt.handle());
                 Ok(Box::new(app))
             }
-            ));
+        ));
 
 }
 

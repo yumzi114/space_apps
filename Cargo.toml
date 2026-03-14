@@ -1,5 +1,5 @@
 [workspace]
-members = ["api_server","client_ui","db-schema/spacetimedb",
+members = ["api_server","client_ui","db-schema/spacetimedb"
     # "spacetimedb",
 ]
 

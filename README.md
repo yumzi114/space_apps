@@ -1,5 +1,10 @@
 # space_apps
 
+
+spacetime delete --server proxmox-stdb eomdb
+spacetime publish --server proxmox-stdb --module-path spacetimedb eomdb
+
+
 쿼리문 
 spacetime sql --server proxmox-stdb eomdb "SELECT * FROM user"
 
